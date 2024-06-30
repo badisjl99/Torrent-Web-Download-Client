@@ -1,5 +1,7 @@
 import express from 'express';
 import WebTorrent from 'webtorrent';
+import fs from 'fs-extra'; // Import fs-extra for file operations
+import path from 'path'; // Import path for handling file paths
 
 const app = express();
 const client = new WebTorrent();
@@ -10,15 +12,13 @@ app.use(express.static('public'));
 
 // Route to display the torrent details
 app.get('/', (req, res) => {
-    const torrents = client.torrents.map(torrent => {
-        return {
-            infoHash: torrent.infoHash,
-            name: torrent.name,
-            size: (torrent.length / (1024 * 1024)).toFixed(2) + ' MB',
-            downloaded: (torrent.downloaded / (1024 * 1024)).toFixed(2) + ' MB',
-            downloadSpeed: (torrent.downloadSpeed / (1024)).toFixed(2) + ' kB/s'
-        };
-    });
+    const torrents = client.torrents.map(torrent => ({
+        infoHash: torrent.infoHash,
+        name: torrent.name,
+        size: (torrent.length / (1024 * 1024)).toFixed(2) + ' MB',
+        downloaded: (torrent.downloaded / (1024 * 1024)).toFixed(2) + ' MB',
+        downloadSpeed: (torrent.downloadSpeed / (1024)).toFixed(2) + ' kB/s'
+    }));
     res.render('index', { torrents, pausedTorrents: Array.from(pausedTorrents.keys()) }); // Pass pausedTorrents as an array of keys
 });
 
@@ -28,10 +28,34 @@ app.get('/add', (req, res) => {
     if (magnetURI) {
         client.add(magnetURI, torrent => {
             console.log(`Torrent added: ${torrent.name}`);
+
+            // When torrent finishes downloading
+            torrent.on('done', async () => {
+                const torrentFiles = torrent.files;
+                const downloadPath = path.join(__dirname, 'downloads', torrent.name);
+
+                try {
+                    // Ensure downloads directory exists
+                    await fs.ensureDir(downloadPath);
+
+                    // Iterate through files and save them to the downloads directory
+                    await Promise.all(torrentFiles.map(async file => {
+                        const filePath = path.join(downloadPath, file.path);
+                        await new Promise((resolve, reject) => {
+                            file.createReadStream().pipe(fs.createWriteStream(filePath))
+                                .on('error', reject)
+                                .on('finish', resolve);
+                        });
+                    }));
+                } catch (err) {
+                    console.error('Error saving files:', err);
+                }
+            });
         });
     }
     res.redirect('/');
 });
+
 
 // Route to pause a torrent
 app.get('/pause/:infoHash', (req, res) => {
