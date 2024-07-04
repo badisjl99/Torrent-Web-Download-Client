@@ -24,13 +24,7 @@
                     <strong>Size:</strong> <%= torrent.size %><br>
                     <strong>Downloaded:</strong> <%= torrent.downloaded %><br>
                     <strong>Download Speed:</strong> <%= torrent.downloadSpeed %><br>
-                    <% if (pausedTorrents.includes(torrent.infoHash)) { %>
-                        <button class="btn btn-success btn-sm" onclick="location.href='/resume/<%= torrent.infoHash %>'">Resume</button>
-                    <% } else { %>
-                        <button class="btn btn-warning btn-sm" onclick="location.href='/pause/<%= torrent.infoHash %>'">Pause</button>
-                    <% } %>
-                    <button class="btn btn-danger btn-sm" onclick="location.href='/delete/<%= torrent.infoHash %>'">Delete</button>
-                </li>
+                 
             <% }); %>
         </ul>
     </div>
