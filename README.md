@@ -22,7 +22,16 @@ Make sure you have the following installed:
 1. Clone the repository:
 
    ```sh
-   git clone https://github.com/yourusername/Torrent-Web-Download-Client.git
-   cd Torrent-Web-Download-Client
-```
+   git clone https://github.com/badisjl99/Torrent-Web-Download-Client.git
+  
+2. Navigate to the repository:
+ ```sh
+ cd Torrent-Web-Download-Client
 
+3. Install dependencies:
+ ```sh
+ npm install
+
+4. Run App:
+ ```sh
+ npm start
