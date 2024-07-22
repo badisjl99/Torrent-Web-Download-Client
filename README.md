@@ -27,11 +27,12 @@ Make sure you have the following installed:
 2. Navigate to the repository:
  ```sh
  cd Torrent-Web-Download-Client
-
+```
 3. Install dependencies:
  ```sh
  npm install
-
+```
 4. Run App:
  ```sh
  npm start
+```
