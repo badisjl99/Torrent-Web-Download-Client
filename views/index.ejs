@@ -3,30 +3,580 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Torrent Client</title>
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <title>Professional Torrent Downloader</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #1a1d29;
+            --secondary-bg: #252836;
+            --card-bg: #2d3142;
+            --accent: #4c6ef5;
+            --success: #51cf66;
+            --danger: #ff6b6b;
+            --text-primary: #e9ecef;
+            --text-secondary: #adb5bd;
+        }
+
+        body {
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: var(--secondary-bg) !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            font-size: 0.85rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .stats-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .torrent-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .torrent-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .torrent-card.completed {
+            border-left: 4px solid var(--success);
+        }
+
+        .torrent-card.paused {
+            opacity: 0.7;
+        }
+
+        .progress {
+            height: 8px;
+            background: var(--secondary-bg);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #4263eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(76, 110, 245, 0.4);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            border: none;
+        }
+
+        .btn-success {
+            background: var(--success);
+            border: none;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            transition: all 0.3s;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .file-list {
+            background: var(--secondary-bg);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            padding: 8px;
+            border-bottom: 1px solid var(--primary-bg);
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .input-group input {
+            background: var(--secondary-bg);
+            border: 2px solid var(--card-bg);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 8px 0 0 8px;
+        }
+
+        .input-group input:focus {
+            background: var(--secondary-bg);
+            border-color: var(--accent);
+            color: var(--text-primary);
+            box-shadow: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .custom-toast {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--secondary-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
+    <nav class="navbar navbar-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-cloud-download"></i>  Torrent Downloader
+            </span>
+            <div class="d-flex align-items-center gap-3">
+                <span class="connection-status">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="connectionStatus">Connected</span>
+                </span>
+                <span class="text-light">
+                    <i class="bi bi-hdd"></i> Active: <strong id="navTotalTorrents"><%= typeof totalTorrents !== 'undefined' ? totalTorrents : 0 %></strong>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="toast-container" id="toastContainer"></div>
+
     <div class="container">
-        <h1 class="my-4">Torrent Client</h1>
-        <form class="form-inline my-4" action="/add" method="get">
-            <input type="text" name="magnet" class="form-control mr-sm-2" placeholder="Magnet URL" required>
-            <button type="submit" class="btn btn-primary">Add Torrent</button>
-        </form>
-        <h2>Torrents</h2>
-        <ul class="list-group">
-            <% torrents.forEach(torrent => { %>
-                <li class="list-group-item">
-                    <strong>Name:</strong> <%= torrent.name %><br>
-                    <strong>Size:</strong> <%= torrent.size %><br>
-                    <strong>Downloaded:</strong> <%= torrent.downloaded %><br>
-                    <strong>Download Speed:</strong> <%= torrent.downloadSpeed %><br>
-                 
-            <% }); %>
-        </ul>
+        <!-- Global Stats -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stat-label"><i class="bi bi-download"></i> Download Speed</div>
+                    <div class="stat-value" id="globalDownload"><%= typeof globalDownloadSpeed !== 'undefined' ? globalDownloadSpeed : '0 B/s' %></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stat-label"><i class="bi bi-upload"></i> Upload Speed</div>
+                    <div class="stat-value text-success" id="globalUpload"><%= typeof globalUploadSpeed !== 'undefined' ? globalUploadSpeed : '0 B/s' %></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stat-label"><i class="bi bi-collection"></i> Total Torrents</div>
+                    <div class="stat-value text-warning" id="totalTorrents"><%= typeof totalTorrents !== 'undefined' ? totalTorrents : 0 %></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Torrent Form -->
+        <div class="stats-card mb-4">
+            <h5 class="mb-3"><i class="bi bi-plus-circle"></i> Add New Torrent</h5>
+            <form id="addTorrentForm">
+                <div class="input-group">
+                    <input type="text" id="magnetInput" class="form-control" placeholder="Enter magnet URI or torrent URL" required>
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-download"></i> Add Torrent
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Torrents List -->
+        <h5 class="mb-3"><i class="bi bi-list-ul"></i> Active Downloads</h5>
+        <div id="torrentsList">
+            <% if (typeof torrents === 'undefined' || torrents.length === 0) { %>
+                <div class="empty-state" id="emptyState">
+                    <i class="bi bi-inbox"></i>
+                    <h4>No Active Torrents</h4>
+                    <p>Add a magnet link above to start downloading</p>
+                </div>
+            <% } else { %>
+                <% torrents.forEach(torrent => { %>
+                    <%= renderTorrentCard(torrent) %>
+                <% }); %>
+            <% } %>
+        </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.5.4/dist/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        
+        // Connection status
+        socket.on('connect', () => {
+            document.getElementById('connectionStatus').textContent = 'Connected';
+            document.getElementById('statusDot').style.background = '#51cf66';
+        });
+
+        socket.on('disconnect', () => {
+            document.getElementById('connectionStatus').textContent = 'Disconnected';
+            document.getElementById('statusDot').style.background = '#ff6b6b';
+        });
+
+        // Toast notifications
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = 'custom-toast';
+            toast.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info-circle'} me-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            document.getElementById('toastContainer').appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Real-time torrent updates
+        socket.on('torrent-update', (data) => {
+            updateGlobalStats(data.global);
+            updateTorrentsList(data.torrents);
+        });
+
+        socket.on('torrent-added', (data) => {
+            showToast(`Added: ${data.name}`, 'success');
+        });
+
+        socket.on('torrent-completed', (data) => {
+            showToast(`✓ Completed: ${data.name}`, 'success');
+        });
+
+        socket.on('torrent-error', (data) => {
+            showToast(`Error: ${data.name}`, 'error');
+        });
+
+        function updateGlobalStats(stats) {
+            document.getElementById('globalDownload').textContent = stats.downloadSpeed;
+            document.getElementById('globalUpload').textContent = stats.uploadSpeed;
+            document.getElementById('totalTorrents').textContent = stats.totalTorrents;
+            document.getElementById('navTotalTorrents').textContent = stats.totalTorrents;
+        }
+
+        function updateTorrentsList(torrents) {
+            const container = document.getElementById('torrentsList');
+            
+            if (torrents.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <h4>No Active Torrents</h4>
+                        <p>Add a magnet link above to start downloading</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Update or create torrent cards
+            torrents.forEach(torrent => {
+                let card = document.querySelector(`[data-hash="${torrent.infoHash}"]`);
+                
+                if (!card) {
+                    container.innerHTML = '';
+                    torrents.forEach(t => {
+                        container.innerHTML += createTorrentCard(t);
+                    });
+                    attachEventListeners();
+                    return;
+                }
+
+                // Update existing card
+                updateTorrentCard(card, torrent);
+            });
+
+            // Remove torrents that no longer exist
+            document.querySelectorAll('.torrent-card').forEach(card => {
+                const hash = card.dataset.hash;
+                if (!torrents.find(t => t.infoHash === hash)) {
+                    card.remove();
+                }
+            });
+        }
+
+        function createTorrentCard(torrent) {
+            const completedClass = torrent.progress >= 100 ? 'completed' : '';
+            const pausedClass = torrent.isPaused ? 'paused' : '';
+            
+            return `
+                <div class="torrent-card ${completedClass} ${pausedClass}" data-hash="${torrent.infoHash}">
+                    <div class="row align-items-center mb-3">
+                        <div class="col-md-8">
+                            <h5 class="mb-1"><i class="bi bi-file-earmark"></i> ${torrent.name}</h5>
+                            <small class="text-secondary">
+                                <span class="badge bg-secondary">${torrent.size}</span>
+                                <span class="badge bg-info ms-2">${torrent.peers} peers</span>
+                                <span class="badge bg-warning ms-2">Ratio: ${torrent.ratio}</span>
+                            </small>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            ${torrent.isPaused ? 
+                                `<button class="btn btn-success btn-sm resume-btn" data-hash="${torrent.infoHash}">
+                                    <i class="bi bi-play-fill"></i> Resume
+                                </button>` :
+                                `<button class="btn btn-warning btn-sm pause-btn" data-hash="${torrent.infoHash}">
+                                    <i class="bi bi-pause-fill"></i> Pause
+                                </button>`
+                            }
+                            <button class="btn btn-danger btn-sm remove-btn" data-hash="${torrent.infoHash}">
+                                <i class="bi bi-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="progress mb-2">
+                        <div class="progress-bar" role="progressbar" style="width: ${torrent.progress}%"></div>
+                    </div>
+
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <small class="text-secondary">Progress</small>
+                            <div><strong>${torrent.progress}%</strong></div>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-secondary">Downloaded</small>
+                            <div><strong>${torrent.downloaded}</strong></div>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-secondary">Down Speed</small>
+                            <div><strong class="text-primary">${torrent.downloadSpeed}</strong></div>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-secondary">ETA</small>
+                            <div><strong>${torrent.timeRemaining}</strong></div>
+                        </div>
+                    </div>
+
+                    ${torrent.files.length > 0 ? `
+                        <div class="file-list">
+                            <small class="text-secondary"><strong>Files (${torrent.files.length}):</strong></small>
+                            ${torrent.files.map(file => `
+                                <div class="file-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span><i class="bi bi-file"></i> ${file.name}</span>
+                                        <span class="text-secondary">${file.size} (${file.progress}%)</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function updateTorrentCard(card, torrent) {
+            // Update progress bar
+            const progressBar = card.querySelector('.progress-bar');
+            if (progressBar) {
+                progressBar.style.width = torrent.progress + '%';
+            }
+
+            // Update stats
+            const stats = card.querySelectorAll('.row.text-center strong');
+            if (stats[0]) stats[0].textContent = torrent.progress + '%';
+            if (stats[1]) stats[1].textContent = torrent.downloaded;
+            if (stats[2]) stats[2].textContent = torrent.downloadSpeed;
+            if (stats[3]) stats[3].textContent = torrent.timeRemaining;
+
+            // Update badges
+            const badges = card.querySelectorAll('.badge');
+            if (badges[1]) badges[1].textContent = torrent.peers + ' peers';
+            if (badges[2]) badges[2].textContent = 'Ratio: ' + torrent.ratio;
+
+            // Update completed/paused state
+            if (torrent.progress >= 100) {
+                card.classList.add('completed');
+            }
+            card.classList.toggle('paused', torrent.isPaused);
+        }
+
+        // Add torrent
+        document.getElementById('addTorrentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const magnetInput = document.getElementById('magnetInput');
+            const magnetURI = magnetInput.value.trim();
+
+            try {
+                const response = await fetch('/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ magnetURI })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    magnetInput.value = '';
+                    showToast('Torrent added successfully!', 'success');
+                } else {
+                    showToast('Failed to add torrent: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showToast('Error adding torrent: ' + error.message, 'error');
+            }
+        });
+
+        function attachEventListeners() {
+            // Pause torrent
+            document.querySelectorAll('.pause-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const hash = btn.dataset.hash;
+                    try {
+                        const response = await fetch(`/pause/${hash}`, { method: 'POST' });
+                        const data = await response.json();
+                        if (data.success) {
+                            showToast('Torrent paused', 'success');
+                        }
+                    } catch (error) {
+                        showToast('Error pausing torrent', 'error');
+                    }
+                });
+            });
+
+            // Resume torrent
+            document.querySelectorAll('.resume-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const hash = btn.dataset.hash;
+                    try {
+                        const response = await fetch(`/resume/${hash}`, { method: 'POST' });
+                        const data = await response.json();
+                        if (data.success) {
+                            showToast('Torrent resumed', 'success');
+                        }
+                    } catch (error) {
+                        showToast('Error resuming torrent', 'error');
+                    }
+                });
+            });
+
+            // Remove torrent
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if (!confirm('Are you sure you want to remove this torrent?')) return;
+                    
+                    const hash = btn.dataset.hash;
+                    try {
+                        const response = await fetch(`/remove/${hash}`, { method: 'DELETE' });
+                        const data = await response.json();
+                        if (data.success) {
+                            showToast('Torrent removed', 'success');
+                        }
+                    } catch (error) {
+                        showToast('Error removing torrent', 'error');
+                    }
+                });
+            });
+        }
+
+        // Initial attachment of event listeners
+        attachEventListeners();
+    </script>
 </body>
 </html>
